@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Goal: To create a discord bot, with 8ball and markov!
 import discord
 import random
@@ -10,6 +12,9 @@ client = discord.Client()
 
 #Figure out activity later
 #client.user.setActivity("Testing")
+#^ dosent work
+#client.change_status(game=discord.Game(name="with yarn!"))
+#^ neither do you
 
 def read_token():
     with open('/home/pi/Desktop/discordbot/token.txt', 'r') as f:
@@ -24,7 +29,7 @@ def beat_devil():
     with open('/home/pi/Desktop/discordbot/beatCount.txt', 'w') as f:
         f.write(str(devil_count))
         return devil_count
- 
+
 def measure_temp():
     temp = os.popen("vcgencmd measure_temp").readline()
     return (temp.replace("temp=",""))
@@ -39,17 +44,21 @@ async def on_ready():
 async def on_message(message):
     if message.content.startswith('$hello'):
         await message.channel.send('Hello! :wave:')
+        print('Hello ran')
     if message.content.startswith('$bye'):
         await message.channel.send('Bye! :wave:')
+        print('Bye ran')
     if message.content.startswith('$ripdevil'):
         await message.channel.send('Bob Ross beats the devil out of it. Times beat: ' + str(beat_devil()))
+        print('Ripdevil ran')
     if message.content.startswith('$8ball'):
         myline = random.choice(lines)
         await message.channel.send(myline)
+        print('8ball ran')
     if message.content.startswith('$temp'):
-        await message.channel.send(measure_temp())
-
-
+        temporary = measure_temp()
+        await message.channel.send(temporary)
+        print(temporary)
 
 
 client.run(token)
