@@ -77,8 +77,8 @@ async def on_message(message):
         with urllib.request.urlopen("https://api.openweathermap.org/data/2.5/weather?q=" + location + "&APPID=" + apiweather) as url:
             data = json.load(url)
             print(data)
-            toprocess = data.get('main')
-            await message.channel.send(toprocess)
+            toprocess = data.get('main').get('temp')
+            await message.channel.send(str((round((toprocess - 273.15) * 2) / 2)) + ' C')
 
     if message.content.startswith('$quote '):
         tobeid = str(message.raw_mentions)
@@ -88,13 +88,13 @@ async def on_message(message):
             if len(userid) == 18:
                 text = message.content.replace('$quote add ', '').replace('<@' + userid + '>', '')
                 with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'a+') as f:
-                    f.write(text)
+                    f.write(text + '\n')
                     await message.channel.send('Quote recorded for: ' + userid + ': ' + text)
             else:
                 await message.channel.send('Too many @\'s!')
         else:
             if len(userid) == 18:
-                try: 
+                try:
                     with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'r') as f:
                         quotechoice = f.read().splitlines()
                         myline = random.choice(quotechoice)
@@ -103,8 +103,11 @@ async def on_message(message):
                     await message.channel.send('No quotes on file')
             else:
                 await message.channel.send('Too many @\'s!')
-                
-    if message.content.startswith('$help'):
-        await message.channel.send('Commands: hello, bye, 8ball, ripdevil, quote')
 
+    if message.content.startswith('$help'):
+        await message.channel.send('Commands ($): hello, bye, 8ball [Question], ripdevil, quote [@], quote add [@] [text], weather [city]')
+    
+    if message.content.startswith('$contact'):
+        await message.channel.send('For issues, feedback, or questions contact: Serah The Lioness#5408')
+    
 client.run(token)
