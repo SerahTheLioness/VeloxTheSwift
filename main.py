@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-# Goal: To create a discord bot, with 8ball and markov!
 import discord
 import json
 import os
 import random
 import urllib.request
 
-lines = open('/home/pi/Desktop/discordbot/8ball.txt').read().splitlines()
+balllines = open('/home/pi/Desktop/discordbot/8ball.txt').read().splitlines()
+
+
 
 client = discord.Client()
 
@@ -40,6 +41,8 @@ def measure_temp():
     temp = os.popen("vcgencmd measure_temp").readline()
     return (temp.replace("temp=", ""))
 
+
+
 apiweather = getweatherapi()
 token = read_token()
 
@@ -53,47 +56,71 @@ async def on_message(message):
         await message.channel.send('Hello! :wave:')
         print('Hello ran')
 
-    if message.content.startswith('$bye'):
+    elif message.content.startswith('$bye'):
         await message.channel.send('Bye! :wave:')
         print('Bye ran')
 
-    if message.content.startswith('$ripdevil'):
+    elif message.content.startswith('$ripdevil'):
         await message.channel.send('Bob Ross beats the devil out of it. Times beat: ' + str(beat_devil()))
         print('Ripdevil ran')
 
-    if message.content.startswith('$8ball'):
-        myline = random.choice(lines)
+    elif message.content.startswith('$8ball'):
+        myline = random.choice(balllines)
         await message.channel.send(myline)
         print('8ball ran')
 
-    if message.content.startswith('$temp'):
+    elif message.content.startswith('$temp'):
         temporary = measure_temp()
         await message.channel.send(temporary)
         print(temporary)
 
-    if message.content.startswith('$weather '):
+    elif message.content.startswith('$weather '):
         tobestripped = message.content
         location = tobestripped.replace('$weather ', '')
         with urllib.request.urlopen("https://api.openweathermap.org/data/2.5/weather?q=" + location + "&APPID=" + apiweather) as url:
             data = json.load(url)
             print(data)
             toprocess = data.get('main').get('temp')
-            await message.channel.send(str((round((toprocess - 273.15) * 2) / 2)) + ' C')
+            await message.channel.send(str((round((toprocess - 273.15) * 10) / 10)) + ' C')
 
-    if message.content.startswith('$quote '):
+    elif message.content.startswith('$quote '):
         tobeid = str(message.raw_mentions)
         print('Accessing ' + tobeid + '\'s quote file.')
         userid = tobeid.replace('[', '').replace(']', '')
-        if message.content.startswith('$quote add '):
-            if len(userid) == 18:
+        if len(userid) == 18:
+            if message.content.startswith('$quote add '):
                 text = message.content.replace('$quote add ', '').replace('<@' + userid + '>', '')
                 with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'a+') as f:
-                    f.write(text + '\n')
-                    await message.channel.send('Quote recorded for: ' + userid + ': ' + text)
+                    quotenumber = 1
+                    for i in enumerate(f):
+                        quotenumber += 1
+                    f.write(str(quotenumber) + ': ' + text + '\n')
+                    await message.channel.send('Quote recorded for: <@' + userid + '>: ' + text)
+            elif message.content.startswith('$quote rm #'):
+                number = int(message.content.replace('$quote rm #', '').replace('<@' + userid + '>', '').replace(' ',''))
+                number -= 1
+                try:
+                    with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'r') as f:
+                        lines = f.readlines()
+                    with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'w') as f:
+                        for pos, line in enumerate(lines):
+                            if pos != number:
+                                f.write(line)
+                except:
+                    try:
+                        f = open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'r')
+                        await message.channel.send('Error')
+                    except:
+                        await message.channel.send('No quotes on file')
+            elif message.content.startswith('$quote #'):
+                try:
+                    with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'r') as f:
+                        quotechoice = f.read().splitlines()
+                        myline = int(message.content.replace('$quote #', '').replace('<@!' + userid + '>', '').replace(' ',''))
+                        await message.channel.send(myline)
+                except:
+                    await message.channel.send('No quotes on file')
             else:
-                await message.channel.send('Too many @\'s!')
-        else:
-            if len(userid) == 18:
                 try:
                     with open('/home/pi/Desktop/discordbot/' + userid + '.txt', 'r') as f:
                         quotechoice = f.read().splitlines()
@@ -101,13 +128,15 @@ async def on_message(message):
                         await message.channel.send(myline)
                 except:
                     await message.channel.send('No quotes on file')
-            else:
+        else:
                 await message.channel.send('Too many @\'s!')
+    elif message.content.startswith('$help'):
+        await message.channel.send('Commands ($): hello, bye, 8ball [Question], ripdevil, quote #[number] [@], quote add [@] [text], quote rm #[number] [@], weather [city]')
 
-    if message.content.startswith('$help'):
-        await message.channel.send('Commands ($): hello, bye, 8ball [Question], ripdevil, quote [@], quote add [@] [text], weather [city]')
-    
-    if message.content.startswith('$contact'):
+    elif message.content.startswith('$contact'):
         await message.channel.send('For issues, feedback, or questions contact: Serah The Lioness#5408')
-    
+
+    elif message.content.startswith('$version'):
+        await message.channel.send('0.2.3a: Added support for quote removal(rm), and selection')
+
 client.run(token)
